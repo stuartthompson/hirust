@@ -4,6 +4,7 @@
     A simple program to learn about the Rust programming language.
 */
 
+extern crate chrono;
 mod greeter;
 
 fn main() {
@@ -12,4 +13,6 @@ fn main() {
 
     // Say hello from a function within a module
     greeter::simple_greeter::say_hello();
+
+    greeter::datetime_greeter::say_hello();
 }
