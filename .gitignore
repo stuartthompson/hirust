@@ -1,1 +1,5 @@
-build
+# VSCode settings
+.vscode
+
+# Cargo build directory
+target
