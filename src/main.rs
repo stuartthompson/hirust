@@ -11,7 +11,9 @@ mod greet_server;
 mod greet_client;
 mod parsing_greeter;
 
+use std::sync::mpsc;
 use std::thread;
+use std::time::Duration;
 
 fn main() {
     // Say hello directly
@@ -25,13 +27,21 @@ fn main() {
     parsing_greeter::greet_from_json();
 
     // Start a greeting server
-    let server_thread = thread::spawn(|| {
-        greet_server::server::start_server();
+    let (tx, rx) = mpsc::channel();
+    let server_thread = thread::spawn(move || {
+        greet_server::server::start_server(rx);
     });
 
     // Say hello from the client
     greet_client::client::say_hello();
 
-    // Wait for server
+    // Shut down server after a few seconds
+    println!("[Main] Terminating server in 3 seconds.");
+    thread::sleep(Duration::from_millis(3000));
+    
+    // Shutdown server
+    let _ = tx.send(true);
+    
+    // Wait for server to quit
     server_thread.join().expect("The server thread panicked.");
 }
