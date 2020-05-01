@@ -6,9 +6,10 @@
 
 extern crate chrono;
 extern crate json;
-mod greeter;
-mod greet_server;
+mod channel_greeter;
 mod greet_client;
+mod greet_server;
+mod greeter;
 mod parsing_greeter;
 
 use std::sync::mpsc;
@@ -26,10 +27,17 @@ fn main() {
     // Say hello from parsed JSON
     parsing_greeter::greet_from_json();
 
+    // Say hello to a channel listener
+    let (ctx, crx) = mpsc::channel();
+    let channel_thread = thread::spawn(move || {
+        channel_greeter::start_listening(crx);
+    });
+    let _ = ctx.send("Hello!");
+
     // Start a greeting server
-    let (tx, rx) = mpsc::channel();
+    let (stx, srx) = mpsc::channel();
     let server_thread = thread::spawn(move || {
-        greet_server::server::start_server(rx);
+        greet_server::server::start_server(srx);
     });
 
     // Say hello from the client
@@ -38,10 +46,10 @@ fn main() {
     // Shut down server after a few seconds
     println!("[Main] Terminating server in 3 seconds.");
     thread::sleep(Duration::from_millis(3000));
-    
     // Shutdown server
-    let _ = tx.send(true);
-    
+    let _ = stx.send(true);
+
     // Wait for server to quit
+    channel_thread.join().expect("The channel thread panicked.");
     server_thread.join().expect("The server thread panicked.");
 }
